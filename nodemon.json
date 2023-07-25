@@ -1,0 +1,15 @@
+{
+    "watch": ["src"],
+    "ext": ".ts,.js,.d.ts",
+    "ignore": [],
+    "exec": "dotenv -e .env.development npx ts-node ./src/server.ts",
+    "events": {
+      "restart": "npx kill-port 8888",
+      "crash": "npx kill-port 8888"
+    },
+    "delay": "1500",
+    "files": [
+      "src/index.ts",
+      "src/global.d.ts"
+    ]
+  }
