@@ -9,7 +9,7 @@ import {
   UnauthorizedError,
 } from '../errors/ResponseErrors';
 
-const errorHandler = (err: Error, req: Request, res: Response) => {
+const errorHandler = (err: Error, _req: Request, res: Response, _next: any) => {
   switch (err.name) {
     case DatabaseError.name:
       res.status(DatabaseError.statusCode).json({
@@ -43,7 +43,7 @@ const errorHandler = (err: Error, req: Request, res: Response) => {
       });
       break;
     default:
-      console.log(err.message);
+      console.log(err);
       res.status(500).json({
         responseMessage: 'Unhandled Error',
       });
