@@ -1,7 +1,9 @@
-import express from "express";
-import { exchangeRatesRouter } from "./exchangeRates";
+import express from 'express';
+
+import { exchangeRatesRouter } from './exchangeRates';
+
 const apiRouter = express.Router();
 
-apiRouter.use("/exchangeRates", exchangeRatesRouter);
+apiRouter.use('/exchangeRates', exchangeRatesRouter);
 
 export { apiRouter };

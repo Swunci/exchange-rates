@@ -1,13 +1,13 @@
-import { JwtPayload } from "jsonwebtoken";
+import type { JwtPayload } from 'jsonwebtoken';
 
 declare module 'Express' {
-	export interface Request {
-		user?: JwtPayload
-	}
+  export interface Request {
+    user?: JwtPayload;
+  }
 }
 
 declare module 'jsonwebtoken' {
-	export interface JwtPayload {
-		id?: string
-	}
+  export interface JwtPayload {
+    id?: string;
+  }
 }
