@@ -34,11 +34,9 @@ rule.tz = 'Etc/GMT-14';
 const job = schedule.scheduleJob(rule, async () => {
   console.log('JOB IS STARTING');
   const date = new Date();
-  const lastestDate = `${date.getFullYear()}-${
-    date.getMonth() + 1 < 10 ? '0' : ''
-  }${date.getMonth() + 1}-${date.getDate() + 2 < 10 ? '0' : ''}${
-    date.getDate() + 1
-  }`;
+  const lastestDate = new Date(date.setDate(date.getDate() + 1))
+    .toISOString()
+    .split('T')[0];
   const document = await ExchangeRates.findOne({ date: lastestDate });
   if (document) {
     console.log('already created');
@@ -62,4 +60,51 @@ const job = schedule.scheduleJob(rule, async () => {
   console.log('JOB IS ENDING');
 });
 
-export { job };
+const pingRenderServerJob = schedule.scheduleJob('*/10 * * * *', async () => {
+  console.log('pinging server');
+  const response = await fetch(`https://exchange-rates-d1x0.onrender.com`, {
+    method: 'GET',
+  });
+  console.log(response.ok);
+});
+
+const populatePreviousDataJob = async () => {
+  let successCounter = 0;
+  let loopCounter = 0;
+  let start = new Date('2023-07-26');
+  const end = new Date('2023-07-27');
+  while (start <= end) {
+    const date = start;
+    const lastestDate = date.toISOString().split('T')[0];
+    const document = await ExchangeRates.findOne({ date: lastestDate });
+    if (document) {
+      start = new Date(date.setDate(date.getDate() + 1));
+      successCounter += 1;
+      loopCounter += 1;
+      console.log('already created');
+      continue;
+    }
+    const response = await fetch(
+      `http://api.currencylayer.com/live?access_key=a908aa9294fad9ff1d4357112ecff4d2`,
+      { method: 'GET' },
+    );
+    if (response.ok) {
+      const data = await response.json();
+      const exchangeRates = parseData((data as ApiResponse).quotes);
+      const record = await ExchangeRates.create({
+        date: lastestDate,
+        exchangeRates: JSON.stringify(exchangeRates),
+      });
+      if (record) {
+        console.log('record created');
+        successCounter += 1;
+      }
+    }
+    start = new Date(date.setDate(date.getDate() + 1));
+    loopCounter += 1;
+  }
+  console.log(`${successCounter} total: ${loopCounter}`);
+  console.log('JOB IS ENDING');
+};
+
+export { job, pingRenderServerJob, populatePreviousDataJob };
