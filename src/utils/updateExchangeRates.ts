@@ -3,7 +3,6 @@
 import Decimal from 'decimal.js';
 import fetch from 'node-fetch';
 import schedule from 'node-schedule';
-
 import { ExchangeRates } from '../api/v1/models/ExchangeRates';
 
 interface ApiResponse {
@@ -60,51 +59,52 @@ const job = schedule.scheduleJob(rule, async () => {
   console.log('JOB IS ENDING');
 });
 
-const pingRenderServerJob = schedule.scheduleJob('*/10 * * * *', async () => {
-  console.log('pinging server');
-  const response = await fetch(`https://exchange-rates-d1x0.onrender.com`, {
-    method: 'GET',
-  });
-  console.log(response.ok);
-});
-
 const populatePreviousDataJob = async () => {
+  const end = new Date();
+  const start = new Date();
+  start.setDate(start.getDate() - 2);
+
   let successCounter = 0;
   let loopCounter = 0;
-  let start = new Date('2023-07-26');
-  const end = new Date('2023-07-27');
+
   while (start <= end) {
-    const date = start;
-    const lastestDate = date.toISOString().split('T')[0];
-    const document = await ExchangeRates.findOne({ date: lastestDate });
-    if (document) {
-      start = new Date(date.setDate(date.getDate() + 1));
+    const lastestDate = start.toISOString().split('T')[0];
+
+    // Check if exists first
+    const exists = await ExchangeRates.findOne({ date: lastestDate });
+    if (exists) {
+      console.log('Already exists:', lastestDate);
       successCounter += 1;
       loopCounter += 1;
-      console.log('already created');
+      start.setDate(start.getDate() + 1);
       continue;
     }
+
     const response = await fetch(
       `http://api.currencylayer.com/live?access_key=a908aa9294fad9ff1d4357112ecff4d2`,
       { method: 'GET' },
     );
+
     if (response.ok) {
       const data = await response.json();
-      const exchangeRates = parseData((data as ApiResponse).quotes);
-      const record = await ExchangeRates.create({
+      const exchangeRates = parseData(data.quotes);
+      console.log(
+        'Parsed rates:',
+        Object.keys(exchangeRates).length,
+        'currencies',
+      );
+      console.log('Creating document for date:', lastestDate);
+      await ExchangeRates.create({
         date: lastestDate,
         exchangeRates: JSON.stringify(exchangeRates),
       });
-      if (record) {
-        console.log('record created');
-        successCounter += 1;
-      }
+      successCounter += 1;
     }
-    start = new Date(date.setDate(date.getDate() + 1));
+
+    start.setDate(start.getDate() + 1);
     loopCounter += 1;
   }
-  console.log(`${successCounter} total: ${loopCounter}`);
-  console.log('JOB IS ENDING');
-};
 
-export { job, pingRenderServerJob, populatePreviousDataJob };
+  console.log(`Success: ${successCounter}/${loopCounter}`);
+};
+export { job, populatePreviousDataJob };

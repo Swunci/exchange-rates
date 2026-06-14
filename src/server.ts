@@ -8,7 +8,7 @@ import mongoose from 'mongoose';
 import { errorHandler } from './api/v1/middlewares/errorHandler';
 import { router } from './api/v1/routes';
 import { config } from './config/defaultConfig';
-import { job, pingRenderServerJob } from './utils/updateExchangeRates';
+import { job, populatePreviousDataJob } from './utils/updateExchangeRates';
 
 const app: Application = express();
 
@@ -19,14 +19,14 @@ app.use('/', router);
 
 app.use(errorHandler);
 
-mongoose.connect(config.MONGODB_URL);
-
-app.listen(config.PORT, () => {
-  job;
-  pingRenderServerJob;
-  console.log(
-    `App listening on http://${config.HOST}:${config.PORT}, env=${config.NODE_ENV}`,
-  );
+mongoose.connect(config.MONGODB_URL).then(async () => {
+  await populatePreviousDataJob();
+  app.listen(config.PORT, () => {
+    job;
+    console.log(
+      `App listening on http://${config.HOST}:${config.PORT}, env=${config.NODE_ENV}`,
+    );
+  });
 });
 
 export default app;

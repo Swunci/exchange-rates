@@ -1,0 +1,19 @@
+services:
+  mongo:
+    image: mongo:7
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo-data:/data/db
+
+  exchange-rates:
+    image: swunci/exchange-rates:latest
+    ports:
+      - 3000:3000
+    environment:
+      MONGODB_URL: mongodb://mongo:27017/exchange-rates
+    depends_on:
+      - mongo
+
+volumes:
+  mongo-data:
